@@ -10,9 +10,7 @@ import {
   AlertCircle, 
   ChevronDown, 
   Command, 
-  Bell, 
-  ExternalLink,
-  ShieldCheck
+  Menu,
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { Button } from './ui/Button';
@@ -21,6 +19,7 @@ interface HeaderProps {
   onOpenQuickAdd?: () => void;
   onToggleAdvisor?: () => void;
   onOpenCommandPalette?: () => void;
+  onOpenMobileNav?: () => void;
   isAdvisorOpen?: boolean;
   approvalCount?: number;
 }
@@ -29,6 +28,7 @@ export function Header({
   onOpenQuickAdd,
   onToggleAdvisor,
   onOpenCommandPalette,
+  onOpenMobileNav,
   isAdvisorOpen,
   approvalCount = 1,
 }: HeaderProps) {
@@ -45,10 +45,21 @@ export function Header({
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-[var(--border)] bg-[var(--card)]/90 backdrop-blur-md select-none">
-      <div className="flex h-14 items-center justify-between px-4 sm:px-6">
+      <div className="flex h-14 items-center justify-between px-3 sm:px-6">
         
-        {/* Left: Project Selector Breadcrumb */}
-        <div className="flex items-center space-x-3">
+        {/* Left: Mobile Menu Trigger + Brand & Project Breadcrumb */}
+        <div className="flex items-center space-x-2 sm:space-x-3">
+          
+          {/* Mobile hamburger button */}
+          <button
+            onClick={onOpenMobileNav}
+            aria-label="Open mobile navigation"
+            className="lg:hidden min-h-[40px] min-w-[40px] flex items-center justify-center rounded-[6px] text-[var(--muted)] hover:bg-[var(--background-2)] hover:text-[var(--foreground)] transition-colors"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+
+          {/* Logo & Brand */}
           <Link href="/" className="flex items-center space-x-2">
             <svg
               height="18"
@@ -63,11 +74,12 @@ export function Header({
             </span>
           </Link>
 
-          <span className="text-[var(--border)]">/</span>
+          <span className="text-[var(--border)] hidden sm:inline">/</span>
 
+          {/* Project switcher dropdown */}
           <button
             onClick={onOpenCommandPalette}
-            className="flex items-center space-x-1.5 rounded-[6px] px-2 py-1 text-xs font-medium text-[var(--foreground)] hover:bg-[var(--background-2)] transition-colors"
+            className="hidden sm:flex items-center space-x-1.5 rounded-[6px] px-2 py-1 text-xs font-medium text-[var(--foreground)] hover:bg-[var(--background-2)] transition-colors"
           >
             <span>All Projects</span>
             <ChevronDown className="h-3 w-3 text-[var(--muted)]" />
@@ -102,7 +114,7 @@ export function Header({
         </nav>
 
         {/* Right Action Bar */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1.5 sm:space-x-2">
           
           {/* Cmd+K trigger */}
           <button
@@ -118,20 +130,21 @@ export function Header({
             size="sm"
             variant="secondary"
             onClick={onOpenQuickAdd}
-            className="hidden sm:inline-flex"
+            className="min-h-[36px] sm:min-h-[32px] px-2.5 sm:px-3 text-xs"
           >
-            <Plus className="h-3.5 w-3.5 mr-1" />
-            <span>Create New</span>
+            <Plus className="h-3.5 w-3.5 sm:mr-1" />
+            <span className="hidden sm:inline">Create New</span>
           </Button>
 
           {/* Pending Approval Badge (5% Action Guardrail) */}
           {approvalCount > 0 && (
             <button
               onClick={onToggleAdvisor}
-              className="flex items-center space-x-1.5 rounded-[6px] border border-[var(--warning)]/30 bg-[var(--warning)]/10 px-2.5 py-1 text-xs font-semibold text-[var(--warning)] hover:bg-[var(--warning)]/20 transition-colors"
+              className="flex items-center space-x-1.5 rounded-[6px] border border-[var(--warning)]/30 bg-[var(--warning)]/10 px-2 sm:px-2.5 py-1 text-xs font-semibold text-[var(--warning)] hover:bg-[var(--warning)]/20 transition-colors min-h-[36px] sm:min-h-[32px]"
             >
               <AlertCircle className="h-3.5 w-3.5" />
-              <span>{approvalCount} Pending</span>
+              <span className="hidden sm:inline">{approvalCount} Pending</span>
+              <span className="sm:hidden">{approvalCount}</span>
             </button>
           )}
 
@@ -140,13 +153,14 @@ export function Header({
             size="sm"
             variant={isAdvisorOpen ? 'primary' : 'secondary'}
             onClick={onToggleAdvisor}
+            className="min-h-[36px] sm:min-h-[32px] px-2.5 sm:px-3 text-xs"
           >
-            <Sparkles className="h-3.5 w-3.5 text-indigo-500 mr-1.5" />
-            <span>Advisor</span>
+            <Sparkles className="h-3.5 w-3.5 text-indigo-500 sm:mr-1.5" />
+            <span className="hidden sm:inline">Advisor</span>
           </Button>
 
-          {/* Theme Toggle (Light default + 200ms rotating Sun/Moon) */}
-          <ThemeToggle />
+          {/* Theme Toggle */}
+          <ThemeToggle className="min-h-[36px] min-w-[36px] sm:min-h-[32px] sm:min-w-[32px]" />
         </div>
 
       </div>

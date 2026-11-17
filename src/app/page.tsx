@@ -39,6 +39,8 @@ import { StatCardSkeleton, ProjectCardSkeleton } from '@/components/ui/Skeleton'
 import { useToast } from '@/components/ui/Toast';
 import { GeminiAdvisorPanel } from '@/components/GeminiAdvisorPanel';
 import { QuickAddModal } from '@/components/QuickAddModal';
+import { MobileNav } from '@/components/MobileNav';
+import { MobileTabBar } from '@/components/MobileTabBar';
 import { 
   LifeDomain, 
   DailyPriority, 
@@ -69,6 +71,7 @@ export default function DashboardPage() {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isAdvisorOpen, setIsAdvisorOpen] = useState(false);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -242,6 +245,7 @@ export default function DashboardPage() {
         onOpenQuickAdd={() => setIsQuickAddOpen(true)}
         onToggleAdvisor={() => setIsAdvisorOpen((prev) => !prev)}
         onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+        onOpenMobileNav={() => setIsMobileNavOpen(true)}
         isAdvisorOpen={isAdvisorOpen}
         approvalCount={approvals.length}
       />
@@ -249,7 +253,7 @@ export default function DashboardPage() {
       <div className="flex">
         <Sidebar onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto space-y-6">
+        <main className="flex-1 p-3.5 sm:p-6 lg:p-8 max-w-[1400px] mx-auto space-y-5 sm:space-y-6 pb-24 lg:pb-8 w-full overflow-x-hidden">
           <PageTransition>
             
             {/* Error Handling State Demonstration */}
@@ -627,6 +631,21 @@ export default function DashboardPage() {
         isOpen={isQuickAddOpen}
         onClose={() => setIsQuickAddOpen(false)}
         onRefresh={fetchDashboardData}
+      />
+
+      {/* Mobile Slide-Over Navigation */}
+      <MobileNav
+        isOpen={isMobileNavOpen}
+        onClose={() => setIsMobileNavOpen(false)}
+        onOpenQuickAdd={() => setIsQuickAddOpen(true)}
+        onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+      />
+
+      {/* Mobile Bottom Tab Bar */}
+      <MobileTabBar
+        onOpenMobileNav={() => setIsMobileNavOpen(true)}
+        onToggleAdvisor={() => setIsAdvisorOpen((prev) => !prev)}
+        approvalCount={approvals.length}
       />
     </div>
   );
