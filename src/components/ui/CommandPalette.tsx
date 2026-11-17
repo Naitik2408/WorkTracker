@@ -2,24 +2,17 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   Search, 
-  Sun, 
-  Briefcase, 
-  Rocket, 
-  GraduationCap, 
-  HeartPulse, 
-  Wallet, 
-  CheckSquare, 
-  Compass, 
-  Target, 
-  Lightbulb, 
-  BarChart3, 
-  CalendarCheck2,
-  Sparkles,
-  Plus,
-  Command
+  LayoutGrid, 
+  Layers, 
+  GitBranch, 
+  ExternalLink, 
+  Terminal, 
+  Plus, 
+  Sun,
+  Globe
 } from 'lucide-react';
 import { useTheme } from '../ThemeProvider';
 
@@ -27,7 +20,7 @@ interface CommandItem {
   id: string;
   title: string;
   subtitle?: string;
-  group: 'Navigation' | 'Actions' | 'Preferences';
+  group: 'Projects' | 'Actions' | 'Preferences';
   icon: React.ElementType;
   onSelect: () => void;
 }
@@ -36,142 +29,73 @@ export function CommandPalette({
   isOpen,
   onClose,
   onOpenQuickAdd,
+  projects = []
 }: {
   isOpen: boolean;
   onClose: () => void;
   onOpenQuickAdd?: () => void;
+  projects?: Array<{ name: string; domain?: string; framework?: string }>;
 }) {
   const router = useRouter();
   const { toggleTheme } = useTheme();
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const items: CommandItem[] = [
+  // Dynamic project items from real Vercel data
+  const projectItems: CommandItem[] = projects.map((p) => ({
+    id: `project-${p.name}`,
+    title: p.name,
+    subtitle: `${p.framework || 'project'} · ${p.domain || `${p.name}.vercel.app`}`,
+    group: 'Projects',
+    icon: Globe,
+    onSelect: () => {
+      if (p.domain) window.open(`https://${p.domain}`, '_blank');
+    }
+  }));
+
+  const staticItems: CommandItem[] = [
     {
-      id: 'morning',
-      title: 'Morning Control Center',
-      subtitle: 'Today’s top 3 priorities and executive pulse',
-      group: 'Navigation',
-      icon: Sun,
-      onSelect: () => router.push('/'),
-    },
-    {
-      id: 'overview',
-      title: 'Life at a Glance',
-      subtitle: '7-domain executive grid & momentum states',
-      group: 'Navigation',
-      icon: Compass,
-      onSelect: () => router.push('/overview'),
-    },
-    {
-      id: 'career',
-      title: 'Career & 95/5 Job Hunt',
-      subtitle: 'Pipeline status, recruiter replies, follow-ups',
-      group: 'Navigation',
-      icon: Briefcase,
-      onSelect: () => router.push('/career'),
-    },
-    {
-      id: 'ventures',
-      title: 'Business & Ventures (Klarone)',
-      subtitle: 'Entrepreneurial ventures and active decisions',
-      group: 'Navigation',
-      icon: Rocket,
-      onSelect: () => router.push('/ventures'),
-    },
-    {
-      id: 'learning',
-      title: 'Learning & Capability Matrix',
-      subtitle: 'Mastered topics and skill evidence',
-      group: 'Navigation',
-      icon: GraduationCap,
-      onSelect: () => router.push('/learning'),
-    },
-    {
-      id: 'health',
-      title: 'Health & Fitness Routines',
-      subtitle: 'Workouts, hydration, and recovery habits',
-      group: 'Navigation',
-      icon: HeartPulse,
-      onSelect: () => router.push('/health'),
-    },
-    {
-      id: 'finance',
-      title: 'Personal Finance & Cashflow',
-      subtitle: 'Inflows, operating expenses, upcoming bills',
-      group: 'Navigation',
-      icon: Wallet,
-      onSelect: () => router.push('/finance'),
-    },
-    {
-      id: 'operations',
-      title: 'Personal Operations & Schedule',
-      subtitle: 'Administrative tasks, commitments, reminders',
-      group: 'Navigation',
-      icon: CheckSquare,
-      onSelect: () => router.push('/operations'),
-    },
-    {
-      id: 'sandbox',
-      title: 'Idea Evaluation Sandbox',
-      subtitle: 'Raw ideas separated from active projects',
-      group: 'Navigation',
-      icon: Lightbulb,
-      onSelect: () => router.push('/sandbox'),
-    },
-    {
-      id: 'analytics',
-      title: 'Analytics & Pattern Trends',
-      subtitle: 'Attention distribution and habit velocity',
-      group: 'Navigation',
-      icon: BarChart3,
-      onSelect: () => router.push('/analytics'),
-    },
-    {
-      id: 'reviews',
-      title: 'Executive Cadence Reviews',
-      subtitle: 'Daily, weekly, and monthly retrospectives',
-      group: 'Navigation',
-      icon: CalendarCheck2,
-      onSelect: () => router.push('/reviews'),
-    },
-    {
-      id: 'quick-add',
-      title: 'Quick Add Item',
-      subtitle: 'Capture priority, job, idea, or ops task',
+      id: 'action-new',
+      title: 'Import New Project',
+      subtitle: 'Connect a GitHub repository to track on Vercel',
       group: 'Actions',
       icon: Plus,
       onSelect: () => {
         onClose();
         if (onOpenQuickAdd) onOpenQuickAdd();
-      },
+      }
     },
     {
-      id: 'toggle-theme',
+      id: 'action-deployments',
+      title: 'View Deployments',
+      subtitle: 'Inspect real-time deployment status across projects',
+      group: 'Actions',
+      icon: Layers,
+      onSelect: () => router.push('/#deployments')
+    },
+    {
+      id: 'pref-theme',
       title: 'Toggle Theme (Light / Dark)',
       subtitle: 'Switch between light default and dark mode',
       group: 'Preferences',
       icon: Sun,
-      onSelect: () => toggleTheme(),
-    },
+      onSelect: () => toggleTheme()
+    }
   ];
 
-  const filteredItems = items.filter(
+  const allItems = [...projectItems, ...staticItems];
+
+  const filteredItems = allItems.filter(
     (item) =>
       item.title.toLowerCase().includes(query.toLowerCase()) ||
       item.subtitle?.toLowerCase().includes(query.toLowerCase())
   );
 
-  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         if (isOpen) onClose();
-        else {
-          setQuery('');
-          setSelectedIndex(0);
-        }
       }
       if (!isOpen) return;
 
@@ -200,7 +124,7 @@ export function CommandPalette({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 px-4 bg-black/40 backdrop-blur-xs">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-black/40 backdrop-blur-xs">
       <motion.div
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -218,7 +142,7 @@ export function CommandPalette({
               setQuery(e.target.value);
               setSelectedIndex(0);
             }}
-            placeholder="Type a command or search..."
+            placeholder="Search projects by name, repo, or domain..."
             className="w-full bg-transparent px-3 py-3.5 text-xs text-[var(--foreground)] placeholder-[var(--subtle)] focus:outline-none"
           />
           <kbd className="hidden sm:inline-block rounded px-1.5 py-0.5 text-[10px] font-mono border border-[var(--border)] bg-[var(--background-2)] text-[var(--muted)]">
@@ -267,7 +191,7 @@ export function CommandPalette({
 
           {filteredItems.length === 0 && (
             <div className="py-8 text-center text-xs text-[var(--muted)]">
-              No results found for &ldquo;{query}&rdquo;
+              No projects match &ldquo;{query}&rdquo;
             </div>
           )}
         </div>

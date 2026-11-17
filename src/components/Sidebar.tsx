@@ -3,29 +3,24 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   LayoutGrid, 
-  Briefcase, 
-  Rocket, 
-  GraduationCap, 
-  HeartPulse, 
-  Wallet, 
-  CheckSquare, 
-  Compass, 
-  Target, 
-  Lightbulb, 
-  BarChart3, 
-  CalendarCheck2, 
-  ChevronDown, 
+  Layers, 
+  GitBranch, 
+  Activity, 
+  Terminal, 
+  ShieldCheck, 
+  Radio, 
+  HardDrive, 
+  KeyRound, 
+  Globe, 
   Search, 
   X, 
   Bell, 
-  MoreHorizontal,
-  ChevronLeft,
-  ChevronRight,
-  SunMedium,
-  Sparkles
+  MoreHorizontal, 
+  ChevronLeft, 
+  ChevronRight 
 } from 'lucide-react';
 import { Tooltip } from './ui/Tooltip';
 
@@ -38,18 +33,15 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { name: 'Projects & Morning', href: '/', icon: LayoutGrid },
-  { name: 'Life at a Glance', href: '/overview', icon: Compass },
-  { name: 'Career & 95/5 Hunt', href: '/career', icon: Briefcase, badge: '95/5', badgeVariant: 'accent' },
-  { name: 'Ventures (Klarone)', href: '/ventures', icon: Rocket },
-  { name: 'Learning & Skills', href: '/learning', icon: GraduationCap },
-  { name: 'Health & Fitness', href: '/health', icon: HeartPulse },
-  { name: 'Personal Finance', href: '/finance', icon: Wallet },
-  { name: 'Personal Operations', href: '/operations', icon: CheckSquare, badge: 'Due', badgeVariant: 'warning' },
-  { name: 'Goals & Milestones', href: '/goals', icon: Target },
-  { name: 'Idea Sandbox', href: '/sandbox', icon: Lightbulb },
-  { name: 'Analytics & Patterns', href: '/analytics', icon: BarChart3 },
-  { name: 'Cadence Reviews', href: '/reviews', icon: CalendarCheck2 },
+  { name: 'Projects', href: '/', icon: LayoutGrid },
+  { name: 'Deployments', href: '/#deployments', icon: Layers },
+  { name: 'Git & Branches', href: '/#git', icon: GitBranch },
+  { name: 'Logs & Activity', href: '/#logs', icon: Terminal },
+  { name: 'Analytics & Traffic', href: '/#analytics', icon: Activity },
+  { name: 'Speed Insights', href: '/#speed', icon: Radio },
+  { name: 'Observability', href: '/#observability', icon: ShieldCheck },
+  { name: 'Environment Variables', href: '/#env', icon: KeyRound },
+  { name: 'Domains & DNS', href: '/#domains', icon: Globe },
 ];
 
 export function Sidebar({ onOpenCommandPalette }: { onOpenCommandPalette?: () => void }) {
@@ -79,7 +71,7 @@ export function Sidebar({ onOpenCommandPalette }: { onOpenCommandPalette?: () =>
       className="relative shrink-0 border-r border-[var(--border)] bg-[var(--card)] min-h-[calc(100vh-3.5rem)] flex flex-col justify-between hidden md:flex select-none z-30"
     >
       <div>
-        {/* Workspace Selector */}
+        {/* Workspace Selector matching Vercel screenshot */}
         <div className="h-12 border-b border-[var(--border)] flex items-center justify-between px-3">
           <div className="flex items-center space-x-2 overflow-hidden">
             <div className="h-5 w-5 rounded-full bg-black text-white dark:bg-white dark:text-black flex items-center justify-center text-[10px] font-bold shrink-0">
@@ -106,7 +98,7 @@ export function Sidebar({ onOpenCommandPalette }: { onOpenCommandPalette?: () =>
           </button>
         </div>
 
-        {/* Find Input (Cmd/F shortcut) */}
+        {/* Find Search Input */}
         {!isCollapsed ? (
           <div className="p-2 border-b border-[var(--border)]">
             <button
@@ -135,15 +127,15 @@ export function Sidebar({ onOpenCommandPalette }: { onOpenCommandPalette?: () =>
           </div>
         )}
 
-        {/* Navigation list */}
+        {/* Project Navigation list */}
         <nav className="p-2 space-y-0.5">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
             const Icon = item.icon;
 
             const buttonContent = (
               <Link
-                key={item.href}
+                key={item.name}
                 href={item.href}
                 className={`group relative flex items-center rounded-[6px] px-2.5 py-1.5 text-xs transition-colors ${
                   isActive
@@ -151,7 +143,6 @@ export function Sidebar({ onOpenCommandPalette }: { onOpenCommandPalette?: () =>
                     : 'text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-2)]'
                 }`}
               >
-                {/* Sliding indicator */}
                 {isActive && (
                   <motion.div
                     layoutId="sidebar-active"
@@ -170,15 +161,7 @@ export function Sidebar({ onOpenCommandPalette }: { onOpenCommandPalette?: () =>
                 </div>
 
                 {!isCollapsed && item.badge && (
-                  <span
-                    className={`ml-auto rounded px-1.5 py-0.2 text-[9px] font-semibold tracking-tight ${
-                      item.badgeVariant === 'accent'
-                        ? 'bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20'
-                        : item.badgeVariant === 'warning'
-                        ? 'bg-[var(--warning)]/10 text-[var(--warning)] border border-[var(--warning)]/20'
-                        : 'bg-[var(--border)] text-[var(--muted)]'
-                    }`}
-                  >
+                  <span className="ml-auto rounded px-1.5 py-0.2 text-[9px] font-semibold tracking-tight bg-[var(--border)] text-[var(--muted)]">
                     {item.badge}
                   </span>
                 )}
@@ -187,7 +170,7 @@ export function Sidebar({ onOpenCommandPalette }: { onOpenCommandPalette?: () =>
 
             if (isCollapsed) {
               return (
-                <Tooltip key={item.href} content={item.name} side="right">
+                <Tooltip key={item.name} content={item.name} side="right">
                   {buttonContent}
                 </Tooltip>
               );
@@ -200,7 +183,6 @@ export function Sidebar({ onOpenCommandPalette }: { onOpenCommandPalette?: () =>
 
       {/* Bottom Section */}
       <div className="p-2 border-t border-[var(--border)] space-y-2">
-        {/* Token Pass Callout matching Vercel UI */}
         {!isCollapsed && showCallout && (
           <div className="rounded-[8px] border border-[var(--border)] bg-[var(--background-2)] p-2.5 text-xs space-y-2 relative">
             <button
@@ -210,24 +192,17 @@ export function Sidebar({ onOpenCommandPalette }: { onOpenCommandPalette?: () =>
               <X className="h-3 w-3" />
             </button>
             <div className="flex items-center space-x-1.5">
-              <span className="font-semibold text-[11px] text-[var(--foreground)]">CEO Pass</span>
-              <span className="rounded bg-[var(--accent)]/10 text-[var(--accent)] px-1.5 py-0.2 text-[9px] font-bold">
-                Active
+              <span className="font-semibold text-[11px] text-[var(--foreground)]">Vercel Connected</span>
+              <span className="rounded bg-[var(--success)]/10 text-[var(--success)] px-1.5 py-0.2 text-[9px] font-bold">
+                Live
               </span>
             </div>
             <p className="text-[10px] text-[var(--muted)] leading-relaxed">
-              95% observation model actively monitoring your 7 life domains.
+              Monitoring 20 projects with real-time deployment status.
             </p>
-            <button
-              onClick={onOpenCommandPalette}
-              className="w-full rounded-[6px] bg-[var(--foreground)] text-[var(--background)] py-1 text-[11px] font-medium hover:opacity-90 transition-opacity"
-            >
-              Explore Commands
-            </button>
           </div>
         )}
 
-        {/* User Footer matching Vercel */}
         <div className="flex items-center justify-between p-1.5 rounded-[6px] hover:bg-[var(--background-2)] transition-colors">
           <div className="flex items-center space-x-2 overflow-hidden">
             <div className="h-6 w-6 rounded-full bg-gradient-to-tr from-zinc-700 to-zinc-900 text-white flex items-center justify-center text-[10px] font-bold shrink-0">

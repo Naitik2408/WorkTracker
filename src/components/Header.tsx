@@ -6,51 +6,41 @@ import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
   Plus, 
-  Sparkles, 
-  AlertCircle, 
   ChevronDown, 
   Command, 
-  Menu,
+  ExternalLink,
+  Menu
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { Button } from './ui/Button';
 
 interface HeaderProps {
   onOpenQuickAdd?: () => void;
-  onToggleAdvisor?: () => void;
   onOpenCommandPalette?: () => void;
   onOpenMobileNav?: () => void;
-  isAdvisorOpen?: boolean;
-  approvalCount?: number;
 }
 
 export function Header({
   onOpenQuickAdd,
-  onToggleAdvisor,
   onOpenCommandPalette,
   onOpenMobileNav,
-  isAdvisorOpen,
-  approvalCount = 1,
 }: HeaderProps) {
   const pathname = usePathname();
 
   const tabs = [
     { name: 'Overview', href: '/' },
-    { name: '7 Domains', href: '/overview' },
-    { name: 'Career & 95/5', href: '/career' },
-    { name: 'Ventures', href: '/ventures' },
-    { name: 'Analytics', href: '/analytics' },
-    { name: 'Reviews', href: '/reviews' },
+    { name: 'Deployments', href: '/#deployments' },
+    { name: 'Analytics', href: '/#analytics' },
+    { name: 'Settings', href: '/#settings' },
   ];
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-[var(--border)] bg-[var(--card)]/90 backdrop-blur-md select-none">
       <div className="flex h-14 items-center justify-between px-3 sm:px-6">
         
-        {/* Left: Mobile Menu Trigger + Brand & Project Breadcrumb */}
+        {/* Left: Mobile Menu Trigger + Project Selector Breadcrumb */}
         <div className="flex items-center space-x-2 sm:space-x-3">
           
-          {/* Mobile hamburger button */}
           <button
             onClick={onOpenMobileNav}
             aria-label="Open mobile navigation"
@@ -59,7 +49,6 @@ export function Header({
             <Menu className="h-5 w-5" />
           </button>
 
-          {/* Logo & Brand */}
           <Link href="/" className="flex items-center space-x-2">
             <svg
               height="18"
@@ -76,7 +65,6 @@ export function Header({
 
           <span className="text-[var(--border)] hidden sm:inline">/</span>
 
-          {/* Project switcher dropdown */}
           <button
             onClick={onOpenCommandPalette}
             className="hidden sm:flex items-center space-x-1.5 rounded-[6px] px-2 py-1 text-xs font-medium text-[var(--foreground)] hover:bg-[var(--background-2)] transition-colors"
@@ -86,13 +74,13 @@ export function Header({
           </button>
         </div>
 
-        {/* Center: Top Navigation Tabs (Desktop) with sliding underline */}
+        {/* Center: Top Navigation Tabs (Desktop) matching Vercel */}
         <nav className="hidden lg:flex items-center space-x-1 h-full pt-1">
           {tabs.map((tab) => {
-            const isActive = pathname === tab.href;
+            const isActive = tab.href === '/' ? pathname === '/' : pathname.startsWith(tab.href);
             return (
               <Link
-                key={tab.href}
+                key={tab.name}
                 href={tab.href}
                 className={`relative px-3 py-4 text-xs font-medium transition-colors select-none ${
                   isActive
@@ -116,7 +104,6 @@ export function Header({
         {/* Right Action Bar */}
         <div className="flex items-center space-x-1.5 sm:space-x-2">
           
-          {/* Cmd+K trigger */}
           <button
             onClick={onOpenCommandPalette}
             className="hidden sm:flex items-center space-x-1.5 rounded-[6px] border border-[var(--border)] bg-[var(--background-2)] px-2.5 py-1 text-xs text-[var(--muted)] hover:border-[var(--border-hover)] hover:text-[var(--foreground)] transition-colors"
@@ -125,7 +112,6 @@ export function Header({
             <span className="text-[11px] font-mono">K</span>
           </button>
 
-          {/* Create New (+ button) */}
           <Button
             size="sm"
             variant="secondary"
@@ -133,33 +119,9 @@ export function Header({
             className="min-h-[36px] sm:min-h-[32px] px-2.5 sm:px-3 text-xs"
           >
             <Plus className="h-3.5 w-3.5 sm:mr-1" />
-            <span className="hidden sm:inline">Create New</span>
+            <span className="hidden sm:inline">Create Project</span>
           </Button>
 
-          {/* Pending Approval Badge (5% Action Guardrail) */}
-          {approvalCount > 0 && (
-            <button
-              onClick={onToggleAdvisor}
-              className="flex items-center space-x-1.5 rounded-[6px] border border-[var(--warning)]/30 bg-[var(--warning)]/10 px-2 sm:px-2.5 py-1 text-xs font-semibold text-[var(--warning)] hover:bg-[var(--warning)]/20 transition-colors min-h-[36px] sm:min-h-[32px]"
-            >
-              <AlertCircle className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{approvalCount} Pending</span>
-              <span className="sm:hidden">{approvalCount}</span>
-            </button>
-          )}
-
-          {/* Gemini Advisor Button */}
-          <Button
-            size="sm"
-            variant={isAdvisorOpen ? 'primary' : 'secondary'}
-            onClick={onToggleAdvisor}
-            className="min-h-[36px] sm:min-h-[32px] px-2.5 sm:px-3 text-xs"
-          >
-            <Sparkles className="h-3.5 w-3.5 text-indigo-500 sm:mr-1.5" />
-            <span className="hidden sm:inline">Advisor</span>
-          </Button>
-
-          {/* Theme Toggle */}
           <ThemeToggle className="min-h-[36px] min-w-[36px] sm:min-h-[32px] sm:min-w-[32px]" />
         </div>
 
