@@ -1,42 +1,137 @@
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    --background: #fafafa;
-    --card: #ffffff;
-    --card-foreground: #000000;
-    --border: #eaeaea;
-    --muted: #f4f4f5;
-    --muted-foreground: #666666;
-    --primary: #000000;
-    --primary-foreground: #ffffff;
-    --accent: #f5f5f5;
-    --accent-foreground: #111111;
-  }
+:root {
+  --background: #ffffff;
+  --background-2: #fafafa;
+  --foreground: #171717;
+  --muted: #666666;
+  --subtle: #8f8f8f;
+  --border: #eaeaea;
+  --border-hover: #c9c9c9;
+  --card: #ffffff;
+  --accent: #0070f3;
+  --success: #17a34a;
+  --warning: #f5a623;
+  --danger: #e5484d;
 
-  .dark {
-    --background: #000000;
-    --card: #0a0a0a;
-    --card-foreground: #ffffff;
-    --border: #222222;
-    --muted: #111111;
-    --muted-foreground: #888888;
-    --primary: #ffffff;
-    --primary-foreground: #000000;
-    --accent: #171717;
-    --accent-foreground: #ffffff;
-  }
+  --font-geist-sans: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-geist-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-body {
+.dark {
+  --background: #000000;
+  --background-2: #0a0a0a;
+  --foreground: #ededed;
+  --muted: #a1a1a1;
+  --subtle: #7d7d7d;
+  --border: #2a2a2a;
+  --border-hover: #444444;
+  --card: #0a0a0a;
+  --accent: #3291ff;
+  --success: #3ecf6e;
+  --warning: #f7b955;
+  --danger: #ff6369;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
   background-color: var(--background);
-  color: var(--card-foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--foreground);
+  font-family: var(--font-geist-sans);
   letter-spacing: -0.015em;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Vercel-style subtle scrollbar */
+/* Animate theme changes only on background, border, and text color */
+body, 
+header, 
+aside, 
+main, 
+footer, 
+div, 
+section, 
+nav, 
+button, 
+input, 
+textarea, 
+select {
+  transition: background-color 150ms cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 150ms cubic-bezier(0.22, 1, 0.36, 1),
+              color 150ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Monospace text */
+.font-mono {
+  font-family: var(--font-geist-mono);
+}
+
+/* Vercel-style focus ring */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--accent);
+}
+
+/* Vercel link sliding underline */
+.vercel-link {
+  position: relative;
+  text-decoration: none;
+}
+.vercel-link::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  bottom: -1px;
+  left: 0;
+  background-color: currentColor;
+  transform: scaleX(0);
+  transform-origin: bottom left;
+  transition: transform 150ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.vercel-link:hover::after {
+  transform: scaleX(1);
+}
+
+/* Input shake keyframe for error state */
+@keyframes error-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+.animate-shake {
+  animation: error-shake 250ms ease-in-out;
+}
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--background-2) 25%,
+    var(--border) 50%,
+    var(--background-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite;
+}
+
+/* Live pulse */
+@keyframes soft-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.9); }
+}
+.animate-soft-pulse {
+  animation: soft-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -45,9 +140,19 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(120, 120, 120, 0.2);
+  background: var(--border);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(120, 120, 120, 0.4);
+  background: var(--subtle);
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

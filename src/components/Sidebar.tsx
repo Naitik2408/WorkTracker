@@ -1,119 +1,257 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Sun,
-  LayoutGrid,
-  Briefcase,
-  Rocket,
-  GraduationCap,
-  HeartPulse,
-  Wallet,
-  CheckSquare,
-  Compass,
-  Target,
-  Lightbulb,
-  BarChart3,
-  CalendarCheck2
+  LayoutGrid, 
+  Briefcase, 
+  Rocket, 
+  GraduationCap, 
+  HeartPulse, 
+  Wallet, 
+  CheckSquare, 
+  Compass, 
+  Target, 
+  Lightbulb, 
+  BarChart3, 
+  CalendarCheck2, 
+  ChevronDown, 
+  Search, 
+  X, 
+  Bell, 
+  MoreHorizontal,
+  ChevronLeft,
+  ChevronRight,
+  SunMedium,
+  Sparkles
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Tooltip } from './ui/Tooltip';
 
 interface NavItem {
   name: string;
   href: string;
   icon: React.ElementType;
   badge?: string;
-  badgeColor?: string;
+  badgeVariant?: 'default' | 'success' | 'warning' | 'accent';
 }
 
-const mainNav: NavItem[] = [
-  { name: 'Morning Briefing', href: '/', icon: Sun },
-  { name: 'Life at a Glance', href: '/overview', icon: LayoutGrid },
-];
-
-const lifeAreas: NavItem[] = [
-  { name: 'Career & Income', href: '/career', icon: Briefcase, badge: '95/5' },
-  { name: 'Business & Ventures', href: '/ventures', icon: Rocket },
+const navItems: NavItem[] = [
+  { name: 'Projects & Morning', href: '/', icon: LayoutGrid },
+  { name: 'Life at a Glance', href: '/overview', icon: Compass },
+  { name: 'Career & 95/5 Hunt', href: '/career', icon: Briefcase, badge: '95/5', badgeVariant: 'accent' },
+  { name: 'Ventures (Klarone)', href: '/ventures', icon: Rocket },
   { name: 'Learning & Skills', href: '/learning', icon: GraduationCap },
   { name: 'Health & Fitness', href: '/health', icon: HeartPulse },
   { name: 'Personal Finance', href: '/finance', icon: Wallet },
-  { name: 'Personal Operations', href: '/operations', icon: CheckSquare, badge: 'Due', badgeColor: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40' },
-  { name: 'Personal Growth', href: '/growth', icon: Compass },
-];
-
-const strategyNav: NavItem[] = [
+  { name: 'Personal Operations', href: '/operations', icon: CheckSquare, badge: 'Due', badgeVariant: 'warning' },
   { name: 'Goals & Milestones', href: '/goals', icon: Target },
   { name: 'Idea Sandbox', href: '/sandbox', icon: Lightbulb },
-  { name: 'Analytics & Trends', href: '/analytics', icon: BarChart3 },
+  { name: 'Analytics & Patterns', href: '/analytics', icon: BarChart3 },
   { name: 'Cadence Reviews', href: '/reviews', icon: CalendarCheck2 },
 ];
 
-export function Sidebar() {
+export function Sidebar({ onOpenCommandPalette }: { onOpenCommandPalette?: () => void }) {
   const pathname = usePathname();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [showCallout, setShowCallout] = useState(true);
 
-  const renderNavGroup = (title: string, items: NavItem[]) => (
-    <div className="mb-6">
-      <div className="px-3 mb-2 text-[11px] font-semibold tracking-wider uppercase text-[var(--muted-foreground)]">
-        {title}
-      </div>
-      <nav className="space-y-0.5">
-        {items.map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'group flex items-center justify-between rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-                isActive
-                  ? 'bg-[var(--accent)] text-[var(--card-foreground)] font-semibold shadow-xs'
-                  : 'text-[var(--muted-foreground)] hover:bg-[var(--accent)] hover:text-[var(--card-foreground)]'
-              )}
-            >
-              <div className="flex items-center space-x-2.5">
-                <Icon
-                  className={cn(
-                    'h-4 w-4 shrink-0 transition-colors',
-                    isActive ? 'text-[var(--card-foreground)]' : 'text-[var(--muted-foreground)] group-hover:text-[var(--card-foreground)]'
-                  )}
-                />
-                <span>{item.name}</span>
-              </div>
-              {item.badge && (
-                <span
-                  className={cn(
-                    'ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium tracking-tight',
-                    item.badgeColor || 'bg-[var(--muted)] text-[var(--muted-foreground)]'
-                  )}
-                >
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
-    </div>
-  );
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('sidebar-collapsed');
+      if (saved === 'true') setIsCollapsed(true);
+    } catch {}
+  }, []);
+
+  const toggleCollapsed = () => {
+    const next = !isCollapsed;
+    setIsCollapsed(next);
+    try {
+      localStorage.setItem('sidebar-collapsed', String(next));
+    } catch {}
+  };
 
   return (
-    <aside className="w-64 shrink-0 border-r border-[var(--border)] bg-[var(--card)] p-4 min-h-[calc(100vh-3.5rem)] hidden md:block">
-      {renderNavGroup('Command Center', mainNav)}
-      {renderNavGroup('The 7 Life Areas', lifeAreas)}
-      {renderNavGroup('Strategy & Cadence', strategyNav)}
-      
-      {/* CEO Executive Philosophy Card */}
-      <div className="mt-8 rounded-lg border border-[var(--border)] bg-[var(--background)] p-3">
-        <p className="text-[11px] font-medium text-[var(--card-foreground)]">
-          &ldquo;Act as the CEO of your own life.&rdquo;
-        </p>
-        <p className="mt-1 text-[10px] text-[var(--muted-foreground)] leading-relaxed">
-          High-clarity observation over manual busywork.
-        </p>
+    <motion.aside
+      animate={{ width: isCollapsed ? 56 : 240 }}
+      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+      className="relative shrink-0 border-r border-[var(--border)] bg-[var(--card)] min-h-[calc(100vh-3.5rem)] flex flex-col justify-between hidden md:flex select-none z-30"
+    >
+      <div>
+        {/* Workspace Selector */}
+        <div className="h-12 border-b border-[var(--border)] flex items-center justify-between px-3">
+          <div className="flex items-center space-x-2 overflow-hidden">
+            <div className="h-5 w-5 rounded-full bg-black text-white dark:bg-white dark:text-black flex items-center justify-center text-[10px] font-bold shrink-0">
+              N
+            </div>
+            {!isCollapsed && (
+              <div className="flex items-center space-x-1.5 overflow-hidden">
+                <span className="text-xs font-semibold tracking-tight truncate text-[var(--foreground)]">
+                  Naitik Kumar&apos;s ...
+                </span>
+                <span className="rounded px-1.5 py-0.2 text-[9px] font-medium border border-[var(--border)] bg-[var(--background-2)] text-[var(--muted)] shrink-0">
+                  Hobby
+                </span>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={toggleCollapsed}
+            aria-label="Collapse sidebar"
+            className="rounded p-1 text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-2)] transition-colors shrink-0"
+          >
+            {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+          </button>
+        </div>
+
+        {/* Find Input (Cmd/F shortcut) */}
+        {!isCollapsed ? (
+          <div className="p-2 border-b border-[var(--border)]">
+            <button
+              onClick={onOpenCommandPalette}
+              className="w-full flex items-center justify-between rounded-[6px] border border-[var(--border)] bg-[var(--background-2)] px-2.5 py-1.5 text-xs text-[var(--muted)] hover:border-[var(--border-hover)] hover:text-[var(--foreground)] transition-colors"
+            >
+              <div className="flex items-center space-x-2">
+                <Search className="h-3.5 w-3.5" />
+                <span className="text-[11px]">Find</span>
+              </div>
+              <kbd className="rounded border border-[var(--border)] bg-[var(--card)] px-1.5 py-0.2 text-[9px] font-mono">
+                F
+              </kbd>
+            </button>
+          </div>
+        ) : (
+          <div className="p-2 border-b border-[var(--border)] flex justify-center">
+            <Tooltip content="Quick Find (Cmd+K)" side="right">
+              <button
+                onClick={onOpenCommandPalette}
+                className="h-8 w-8 flex items-center justify-center rounded-[6px] text-[var(--muted)] hover:bg-[var(--background-2)] hover:text-[var(--foreground)]"
+              >
+                <Search className="h-3.5 w-3.5" />
+              </button>
+            </Tooltip>
+          </div>
+        )}
+
+        {/* Navigation list */}
+        <nav className="p-2 space-y-0.5">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
+
+            const buttonContent = (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`group relative flex items-center rounded-[6px] px-2.5 py-1.5 text-xs transition-colors ${
+                  isActive
+                    ? 'font-medium text-[var(--foreground)] bg-[var(--background-2)]'
+                    : 'text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-2)]'
+                }`}
+              >
+                {/* Sliding indicator */}
+                {isActive && (
+                  <motion.div
+                    layoutId="sidebar-active"
+                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                    className="absolute left-0 top-1 bottom-1 w-[2px] bg-[var(--foreground)] rounded-full"
+                  />
+                )}
+
+                <div className="flex items-center space-x-2.5 overflow-hidden">
+                  <Icon
+                    className={`h-4 w-4 shrink-0 transition-colors ${
+                      isActive ? 'text-[var(--foreground)]' : 'text-[var(--muted)] group-hover:text-[var(--foreground)]'
+                    }`}
+                  />
+                  {!isCollapsed && <span className="truncate">{item.name}</span>}
+                </div>
+
+                {!isCollapsed && item.badge && (
+                  <span
+                    className={`ml-auto rounded px-1.5 py-0.2 text-[9px] font-semibold tracking-tight ${
+                      item.badgeVariant === 'accent'
+                        ? 'bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20'
+                        : item.badgeVariant === 'warning'
+                        ? 'bg-[var(--warning)]/10 text-[var(--warning)] border border-[var(--warning)]/20'
+                        : 'bg-[var(--border)] text-[var(--muted)]'
+                    }`}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            );
+
+            if (isCollapsed) {
+              return (
+                <Tooltip key={item.href} content={item.name} side="right">
+                  {buttonContent}
+                </Tooltip>
+              );
+            }
+
+            return buttonContent;
+          })}
+        </nav>
       </div>
-    </aside>
+
+      {/* Bottom Section */}
+      <div className="p-2 border-t border-[var(--border)] space-y-2">
+        {/* Token Pass Callout matching Vercel UI */}
+        {!isCollapsed && showCallout && (
+          <div className="rounded-[8px] border border-[var(--border)] bg-[var(--background-2)] p-2.5 text-xs space-y-2 relative">
+            <button
+              onClick={() => setShowCallout(false)}
+              className="absolute top-2 right-2 text-[var(--muted)] hover:text-[var(--foreground)]"
+            >
+              <X className="h-3 w-3" />
+            </button>
+            <div className="flex items-center space-x-1.5">
+              <span className="font-semibold text-[11px] text-[var(--foreground)]">CEO Pass</span>
+              <span className="rounded bg-[var(--accent)]/10 text-[var(--accent)] px-1.5 py-0.2 text-[9px] font-bold">
+                Active
+              </span>
+            </div>
+            <p className="text-[10px] text-[var(--muted)] leading-relaxed">
+              95% observation model actively monitoring your 7 life domains.
+            </p>
+            <button
+              onClick={onOpenCommandPalette}
+              className="w-full rounded-[6px] bg-[var(--foreground)] text-[var(--background)] py-1 text-[11px] font-medium hover:opacity-90 transition-opacity"
+            >
+              Explore Commands
+            </button>
+          </div>
+        )}
+
+        {/* User Footer matching Vercel */}
+        <div className="flex items-center justify-between p-1.5 rounded-[6px] hover:bg-[var(--background-2)] transition-colors">
+          <div className="flex items-center space-x-2 overflow-hidden">
+            <div className="h-6 w-6 rounded-full bg-gradient-to-tr from-zinc-700 to-zinc-900 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+              NK
+            </div>
+            {!isCollapsed && (
+              <span className="text-xs font-semibold text-[var(--foreground)] truncate">
+                Naitik Kumar
+              </span>
+            )}
+          </div>
+
+          {!isCollapsed && (
+            <div className="flex items-center space-x-1 text-[var(--muted)]">
+              <button className="p-1 hover:text-[var(--foreground)]">
+                <Bell className="h-3.5 w-3.5" />
+              </button>
+              <button className="p-1 hover:text-[var(--foreground)]">
+                <MoreHorizontal className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.aside>
   );
 }
