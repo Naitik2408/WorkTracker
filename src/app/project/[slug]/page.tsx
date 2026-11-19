@@ -290,9 +290,7 @@ export default function ProjectDetailPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-[var(--background)] flex flex-col">
-          <header className="h-12 border-b border-[var(--border)] px-4 flex items-center justify-between text-xs text-[var(--muted)]">
-            <span>WorkTracker / Loading...</span>
-          </header>
+          <TopNav breadcrumbs={[{ label: 'Projects', href: '/' }, { label: 'Loading...' }]} />
           <main className="flex-1 max-w-[1400px] w-full mx-auto p-6 text-center text-xs text-[var(--muted)]">
             Loading project...
           </main>
