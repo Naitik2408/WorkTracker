@@ -1,550 +1,276 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
-import Link from 'next/link';
+import React, { useEffect, useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Search, 
-  Filter, 
+  Plus, 
   LayoutGrid, 
   List, 
-  ExternalLink, 
-  GitBranch, 
-  Clock, 
-  Plus, 
-  ArrowUpRight, 
-  RotateCcw,
-  Bell,
-  HardDrive,
-  Activity,
-  Layers,
-  Inbox,
-  Globe,
-  Radio,
-  CheckCircle2,
-  AlertCircle
+  Filter, 
+  Sparkles, 
+  Layers
 } from 'lucide-react';
-import { Header } from '@/components/Header';
-import { Sidebar } from '@/components/Sidebar';
-import { MobileNav } from '@/components/MobileNav';
-import { MobileTabBar } from '@/components/MobileTabBar';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { ErrorState } from '@/components/ui/ErrorState';
+import { Project, ProjectStatus } from '@/types/project';
+import { getStoredProjects, saveStoredProjects } from '@/lib/projectStore';
+import { TopNav } from '@/components/TopNav';
+import { PickUpCard } from '@/components/PickUpCard';
+import { ProjectCard } from '@/components/ProjectCard';
+import { NewProjectDialog } from '@/components/NewProjectDialog';
 import { CommandPalette } from '@/components/ui/CommandPalette';
-import { PageTransition } from '@/components/ui/PageTransition';
-import { ProjectCardSkeleton } from '@/components/ui/Skeleton';
-import { QuickAddModal } from '@/components/QuickAddModal';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
-import { formatTimeAgo } from '@/lib/utils';
 
-export interface ProjectItem {
-  id: string;
-  name: string;
-  framework: string;
-  domain: string;
-  status: string;
-  branch: string;
-  commitMsg: string;
-  repo: string;
-  repoOwner: string;
-  updatedAt: string;
-}
+export default function ProjectsPage() {
+  const router = useRouter();
+  const { success } = useToast();
 
-export default function DashboardPage() {
-  const { success, toast } = useToast();
-  
-  // Real project data from Vercel API
-  const [projects, setProjects] = useState<ProjectItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [mounted, setMounted] = useState(false);
 
-  // Filters & layout modes
+  // Filters & State
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'All' | ProjectStatus>('All');
   const [layoutMode, setLayoutMode] = useState<'grid' | 'list'>('grid');
-  const [frameworkFilter, setFrameworkFilter] = useState<'all' | 'nextjs' | 'vite'>('all');
-  const [showEmptySim, setShowEmptySim] = useState(false);
-
-  // Modals & Mobile
+  const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
-  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-
-  // Selected project for detailed side inspection (Full Monitoring UX)
-  const [selectedProject, setSelectedProject] = useState<ProjectItem | null>(null);
-
-  const fetchProjects = useCallback(async () => {
-    try {
-      setLoading(true);
-      setHasError(false);
-      const res = await fetch('/api/projects');
-      if (!res.ok) throw new Error('Failed to load projects');
-      const data = await res.json();
-      if (data.projects) {
-        setProjects(data.projects);
-      }
-    } catch (err) {
-      console.error('Error fetching Vercel projects:', err);
-      setHasError(true);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
+    setMounted(true);
+    setProjects(getStoredProjects());
+  }, []);
 
-  const handleProjectCreated = (newProject: ProjectItem) => {
-    setProjects((prev) => [newProject, ...prev]);
-    success('Project Added', `${newProject.name} is now tracked in your dashboard.`);
+  // Keyboard shortcut listener: 'N' creates project, '/' focuses search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is in an input or textarea
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
+        return;
+      }
+
+      if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        setIsNewDialogOpen(true);
+      } else if (e.key === '/') {
+        e.preventDefault();
+        document.getElementById('project-search-input')?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Top 1-3 active projects for "Pick Up Where You Left Off"
+  const pickUpProjects = useMemo(() => {
+    return projects
+      .filter((p) => p.status === 'Active')
+      .slice(0, 3);
+  }, [projects]);
+
+  // Filtered and searched projects
+  const filteredProjects = useMemo(() => {
+    return projects.filter((p) => {
+      const matchesSearch =
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.techStack.some((t) => t.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        p.deployments.some((d) => d.platform.toLowerCase().includes(searchQuery.toLowerCase()));
+
+      const matchesStatus = statusFilter === 'All' || p.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [projects, searchQuery, statusFilter]);
+
+  const handleProjectCreated = (newProject: Project) => {
+    const next = [newProject, ...projects];
+    setProjects(next);
+    saveStoredProjects(next);
+    success('Project created', `${newProject.name} is ready for configuration.`);
+    router.push(`/project/${newProject.slug}`);
   };
 
-  // Filter projects by search query and framework
-  const filteredProjects = showEmptySim
-    ? []
-    : projects.filter((p) => {
-        const matchesQuery = 
-          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.domain.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.commitMsg.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.repo.toLowerCase().includes(searchQuery.toLowerCase());
-        
-        if (frameworkFilter !== 'all') {
-          return matchesQuery && p.framework?.toLowerCase() === frameworkFilter;
-        }
-        return matchesQuery;
-      });
+  const statusOptions: Array<'All' | ProjectStatus> = ['All', 'Active', 'Maintenance', 'Paused', 'Idea'];
 
   return (
     <div className="min-h-screen bg-[var(--background)] flex flex-col">
-      {/* Top Header */}
-      <Header
-        onOpenQuickAdd={() => setIsQuickAddOpen(true)}
+      {/* Top Navigation Shell */}
+      <TopNav
+        breadcrumbs={[{ label: 'Projects' }]}
         onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
-        onOpenMobileNav={() => setIsMobileNavOpen(true)}
       />
 
-      <div className="flex flex-1">
-        {/* Desktop Collapsible Sidebar */}
-        <Sidebar onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
+      <main className="flex-1 max-w-[1400px] w-full mx-auto px-4 sm:px-6 py-6 space-y-7">
+        
+        {/* Header: Title + Primary Action */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center space-x-2">
+              <h1 className="text-xl font-bold tracking-tight text-[var(--foreground)]">
+                Projects
+              </h1>
+              <span className="rounded-full border border-[var(--border)] bg-[var(--surface-subtle)] px-2 py-0.5 text-xs font-mono text-[var(--muted)]">
+                {projects.length}
+              </span>
+            </div>
+            <p className="text-xs text-[var(--muted)] mt-0.5">
+              Track deployments, service dependencies, environment keys, and 6-month re-entry state.
+            </p>
+          </div>
 
-        {/* Main Content Area */}
-        <main className="flex-1 p-3.5 sm:p-6 lg:p-8 max-w-[1400px] mx-auto space-y-5 sm:space-y-6 pb-24 lg:pb-8 w-full overflow-x-hidden">
-          <PageTransition>
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={() => setIsNewDialogOpen(true)}
+            className="flex items-center space-x-1.5 self-start sm:self-auto"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>New project</span>
+            <kbd className="hidden sm:inline-block ml-1 rounded border border-white/20 bg-white/10 px-1 py-0.2 text-[9px] font-mono">
+              N
+            </kbd>
+          </Button>
+        </div>
 
-            {/* Error State */}
-            {hasError && (
-              <ErrorState
-                whatHappened="Failed to connect to Vercel Project Monitor API"
-                whyItHappened="The API token timed out or Vercel rate limits were temporarily reached."
-                whatToDoNext="Click Retry Connection to reconnect and refresh live deployments."
-                onRetry={fetchProjects}
+        {/* Pick Up Where You Left Off Section (Only visible when projects exist) */}
+        {pickUpProjects.length > 0 && !searchQuery && statusFilter === 'All' && (
+          <section className="space-y-3">
+            <div className="flex items-center space-x-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)]">
+              <Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" />
+              <span>Pick up where you left off</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {pickUpProjects.map((p) => (
+                <PickUpCard key={p.id} project={p} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Toolbar: Search, Status Filters, Layout Mode */}
+        <section className="space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[var(--subtle)]" />
+              <input
+                id="project-search-input"
+                type="text"
+                placeholder="Search projects or tech... [/]"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-[6px] border border-[var(--border)] bg-[var(--card)] pl-9 pr-8 py-2 text-xs text-[var(--foreground)] placeholder-[var(--subtle)] hover:border-[var(--border-hover)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 transition-all"
               />
-            )}
-
-            {/* Top Overview & Metrics Bar */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-              <Card className="p-3.5 sm:p-4">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]">
-                  Total Projects
-                </span>
-                <div className="mt-1 text-2xl font-bold font-mono text-[var(--foreground)]">
-                  {loading ? '—' : projects.length}
-                </div>
-                <span className="text-[10px] text-[var(--success)] font-medium">All monitored</span>
-              </Card>
-
-              <Card className="p-3.5 sm:p-4">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]">
-                  Live Deployments
-                </span>
-                <div className="mt-1 text-2xl font-bold font-mono text-[var(--success)]">
-                  {loading ? '—' : projects.filter(p => p.status === 'READY').length}
-                </div>
-                <span className="text-[10px] text-[var(--muted)]">100% operational</span>
-              </Card>
-
-              <Card className="p-3.5 sm:p-4">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]">
-                  Next.js Apps
-                </span>
-                <div className="mt-1 text-2xl font-bold font-mono text-[var(--foreground)]">
-                  {loading ? '—' : projects.filter(p => p.framework === 'nextjs').length}
-                </div>
-                <span className="text-[10px] text-[var(--accent)] font-medium">Turbopack SSR</span>
-              </Card>
-
-              <Card className="p-3.5 sm:p-4">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]">
-                  Vite / React Apps
-                </span>
-                <div className="mt-1 text-2xl font-bold font-mono text-[var(--foreground)]">
-                  {loading ? '—' : projects.filter(p => p.framework === 'vite').length}
-                </div>
-                <span className="text-[10px] text-[var(--muted)]">SPA Deployments</span>
-              </Card>
+              <kbd className="absolute right-2.5 top-2.5 rounded border border-[var(--border)] bg-[var(--surface-subtle)] px-1.5 py-0.2 text-[9px] font-mono text-[var(--muted)]">
+                /
+              </kbd>
             </div>
 
-            {/* Vercel Search & Filter Header (Exact UI from screenshot) */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-              
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[var(--muted)]" />
-                <input
-                  type="text"
-                  placeholder="Search Projects [/]"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-[6px] border border-[var(--border)] bg-[var(--card)] pl-9 pr-8 py-2 text-xs text-[var(--foreground)] placeholder-[var(--subtle)] hover:border-[var(--border-hover)] focus:border-[var(--accent)] focus:outline-none"
-                />
-                <kbd className="absolute right-2.5 top-2.5 rounded border border-[var(--border)] bg-[var(--background-2)] px-1.5 py-0.2 text-[9px] font-mono text-[var(--muted)]">
-                  /
-                </kbd>
+            {/* Status Filter Chips + Layout Toggle */}
+            <div className="flex items-center space-x-2 flex-wrap sm:flex-nowrap">
+              <div className="flex items-center rounded-[6px] border border-[var(--border)] bg-[var(--card)] p-0.5 overflow-x-auto">
+                {statusOptions.map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => setStatusFilter(opt)}
+                    className={`px-2.5 py-1 text-xs font-medium rounded-[4px] transition-colors whitespace-nowrap ${
+                      statusFilter === opt
+                        ? 'bg-[var(--foreground)] text-[var(--background)]'
+                        : 'text-[var(--muted)] hover:text-[var(--foreground)]'
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
               </div>
 
-              <div className="flex items-center space-x-2 flex-wrap">
-                {/* Framework Filters */}
-                <div className="flex items-center rounded-[6px] border border-[var(--border)] bg-[var(--card)] p-0.5">
-                  <button
-                    onClick={() => setFrameworkFilter('all')}
-                    className={`px-2.5 py-1 text-xs font-medium rounded-[4px] transition-colors ${
-                      frameworkFilter === 'all'
-                        ? 'bg-[var(--foreground)] text-[var(--background)]'
-                        : 'text-[var(--muted)] hover:text-[var(--foreground)]'
-                    }`}
-                  >
-                    All ({projects.length})
-                  </button>
-                  <button
-                    onClick={() => setFrameworkFilter('nextjs')}
-                    className={`px-2.5 py-1 text-xs font-medium rounded-[4px] transition-colors ${
-                      frameworkFilter === 'nextjs'
-                        ? 'bg-[var(--foreground)] text-[var(--background)]'
-                        : 'text-[var(--muted)] hover:text-[var(--foreground)]'
-                    }`}
-                  >
-                    Next.js
-                  </button>
-                  <button
-                    onClick={() => setFrameworkFilter('vite')}
-                    className={`px-2.5 py-1 text-xs font-medium rounded-[4px] transition-colors ${
-                      frameworkFilter === 'vite'
-                        ? 'bg-[var(--foreground)] text-[var(--background)]'
-                        : 'text-[var(--muted)] hover:text-[var(--foreground)]'
-                    }`}
-                  >
-                    Vite
-                  </button>
-                </div>
-
-                {/* Grid / List Layout toggle */}
-                <div className="flex items-center rounded-[6px] border border-[var(--border)] bg-[var(--card)] p-0.5">
-                  <button
-                    onClick={() => setLayoutMode('grid')}
-                    className={`p-1.5 rounded-[4px] transition-colors ${
-                      layoutMode === 'grid'
-                        ? 'bg-[var(--foreground)] text-[var(--background)]'
-                        : 'text-[var(--muted)] hover:text-[var(--foreground)]'
-                    }`}
-                  >
-                    <LayoutGrid className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    onClick={() => setLayoutMode('list')}
-                    className={`p-1.5 rounded-[4px] transition-colors ${
-                      layoutMode === 'list'
-                        ? 'bg-[var(--foreground)] text-[var(--background)]'
-                        : 'text-[var(--muted)] hover:text-[var(--foreground)]'
-                    }`}
-                  >
-                    <List className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-
-                {/* Empty State Simulator toggle for UX testing */}
+              {/* Grid / List Layout Switcher */}
+              <div className="hidden sm:flex items-center rounded-[6px] border border-[var(--border)] bg-[var(--card)] p-0.5">
                 <button
-                  onClick={() => setShowEmptySim(!showEmptySim)}
-                  className="text-[10px] font-mono text-[var(--muted)] hover:text-[var(--foreground)] px-2 py-1 rounded border border-dashed border-[var(--border)]"
+                  onClick={() => setLayoutMode('grid')}
+                  aria-label="Grid layout"
+                  className={`p-1.5 rounded-[4px] transition-colors ${
+                    layoutMode === 'grid'
+                      ? 'bg-[var(--foreground)] text-[var(--background)]'
+                      : 'text-[var(--muted)] hover:text-[var(--foreground)]'
+                  }`}
                 >
-                  {showEmptySim ? 'Reset Data' : 'Simulate Empty'}
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => setLayoutMode('list')}
+                  aria-label="List layout"
+                  className={`p-1.5 rounded-[4px] transition-colors ${
+                    layoutMode === 'list'
+                      ? 'bg-[var(--foreground)] text-[var(--background)]'
+                      : 'text-[var(--muted)] hover:text-[var(--foreground)]'
+                  }`}
+                >
+                  <List className="h-3.5 w-3.5" />
                 </button>
               </div>
+
             </div>
 
-            {/* Layout Split: Left (Usage & Quick Status) + Right (Real Project Cards) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
-              {/* Left Column: Account Usage & Quick System Status matching image.png */}
-              <div className="lg:col-span-4 space-y-4">
-                
-                {/* Usage Card */}
-                <Card className="p-4 space-y-3">
-                  <div className="flex items-center justify-between text-xs pb-2 border-b border-[var(--border)]">
-                    <span className="font-semibold text-[var(--foreground)] flex items-center space-x-1.5">
-                      <Clock className="h-3.5 w-3.5 text-[var(--muted)]" />
-                      <span>Usage · Last 30 days</span>
-                    </span>
-                    <button className="rounded px-2 py-0.5 text-[10px] font-semibold bg-[var(--foreground)] text-[var(--background)]">
-                      Hobby
-                    </button>
-                  </div>
+          </div>
 
-                  <div className="space-y-3 text-xs">
-                    <div>
-                      <div className="flex justify-between text-[11px] mb-1">
-                        <span className="text-[var(--muted)]">Deployment Storage</span>
-                        <span className="font-mono">401.18 MB / 10 GB</span>
-                      </div>
-                      <div className="h-1.5 w-full rounded-full bg-[var(--background-2)] overflow-hidden">
-                        <div className="h-1.5 bg-[var(--accent)] rounded-full w-[4%]" />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between text-[11px] mb-1">
-                        <span className="text-[var(--muted)]">CDN Requests</span>
-                        <span className="font-mono">11K / 1M</span>
-                      </div>
-                      <div className="h-1.5 w-full rounded-full bg-[var(--background-2)] overflow-hidden">
-                        <div className="h-1.5 bg-[var(--accent)] rounded-full w-[1.1%]" />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between text-[11px] mb-1">
-                        <span className="text-[var(--muted)]">Fast Data Transfer</span>
-                        <span className="font-mono">1.01 GB / 100 GB</span>
-                      </div>
-                      <div className="h-1.5 w-full rounded-full bg-[var(--background-2)] overflow-hidden">
-                        <div className="h-1.5 bg-[var(--accent)] rounded-full w-[1%]" />
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-
-                {/* Alerts Card matching screenshot */}
-                <Card className="p-4 space-y-3 text-center">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--background-2)] border border-[var(--border)] mx-auto text-[var(--muted)]">
-                    <Bell className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-semibold text-[var(--foreground)]">Deployment Alerts</h4>
-                    <p className="mt-1 text-[11px] text-[var(--muted)] leading-relaxed">
-                      Instant notifications when builds fail or performance slips across your repositories.
-                    </p>
-                  </div>
-                  <Button variant="secondary" size="sm" className="w-full">
-                    Configure Alerts
-                  </Button>
-                </Card>
-
-                {/* Selected Project Quick Inspector (Deep Detail Monitoring) */}
-                {selectedProject && (
-                  <Card className="p-4 space-y-3 border-[var(--accent)]/40 bg-[var(--accent)]/5">
-                    <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
-                      <span className="text-xs font-bold text-[var(--foreground)]">
-                        Project Detail Inspector
-                      </span>
-                      <button
-                        onClick={() => setSelectedProject(null)}
-                        className="text-[10px] text-[var(--muted)] hover:text-[var(--foreground)]"
-                      >
-                        Close
-                      </button>
-                    </div>
-
-                    <div className="space-y-1.5 text-xs">
-                      <div>
-                        <span className="text-[10px] text-[var(--muted)] uppercase block">Project Name</span>
-                        <span className="font-semibold font-mono">{selectedProject.name}</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-[var(--muted)] uppercase block">Framework</span>
-                        <span className="capitalize">{selectedProject.framework}</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-[var(--muted)] uppercase block">Live Domain</span>
-                        <a
-                          href={`https://${selectedProject.domain}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[var(--accent)] hover:underline flex items-center space-x-1 font-mono text-[11px]"
-                        >
-                          <span>{selectedProject.domain}</span>
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-[var(--muted)] uppercase block">Last Commit</span>
-                        <p className="text-[11px] text-[var(--foreground)] leading-tight mt-0.5">
-                          {selectedProject.commitMsg}
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-                )}
-
-              </div>
-
-              {/* Right Column: Monitored Projects (Grid or List View) */}
-              <div className="lg:col-span-8 space-y-4">
-                
-                {/* New Repository Detected Banner (Matching image.png) */}
-                <div className="rounded-[8px] border border-[var(--border)] bg-[var(--card)] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-black text-white dark:bg-white dark:text-black font-bold text-xs shrink-0">
-                      N
-                    </div>
-                    <div>
-                      <span className="text-xs font-semibold text-[var(--foreground)] block">
-                        New repository detected
-                      </span>
-                      <span className="text-[11px] font-mono text-[var(--muted)]">
-                        Naitik2408/WorkTracker
-                      </span>
-                    </div>
-                  </div>
-                  <Button size="sm" variant="primary" className="self-start sm:self-auto">
-                    Live Production Ready
-                  </Button>
-                </div>
-
-                {/* Loading Skeletons */}
-                {loading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <ProjectCardSkeleton key={i} />
-                    ))}
-                  </div>
-                ) : filteredProjects.length === 0 ? (
-                  <EmptyState
-                    icon={Inbox}
-                    title="No projects match your filter"
-                    description="Try searching with a different term or clearing your framework filter."
-                    actionLabel="Reset Search"
-                    onAction={() => {
+          {/* Project List / Grid */}
+          {filteredProjects.length > 0 ? (
+            <div
+              className={
+                layoutMode === 'grid'
+                  ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5'
+                  : 'space-y-2'
+              }
+            >
+              {filteredProjects.map((p) => (
+                <ProjectCard key={p.id} project={p} layoutMode={layoutMode} />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon={Layers}
+              title={projects.length === 0 ? 'No projects yet' : 'No matching projects found'}
+              description={
+                projects.length === 0
+                  ? 'Create your first project to document its tech stack, deployments, and 6-month re-entry resume.'
+                  : `No projects match "${searchQuery}". Clear your search query or filters.`
+              }
+              actionLabel={projects.length === 0 ? 'Create first project' : 'Clear filters'}
+              onAction={
+                projects.length === 0
+                  ? () => setIsNewDialogOpen(true)
+                  : () => {
                       setSearchQuery('');
-                      setFrameworkFilter('all');
-                      setShowEmptySim(false);
-                    }}
-                  />
-                ) : layoutMode === 'grid' ? (
-                  /* Projects Grid matching exact Vercel Card aesthetic from image.png */
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {filteredProjects.map((p) => (
-                      <Card
-                        key={p.id}
-                        onClick={() => setSelectedProject(p)}
-                        className={`p-4 space-y-3 flex flex-col justify-between hover:border-[var(--border-hover)] cursor-pointer select-none transition-all ${
-                          selectedProject?.id === p.id ? 'ring-2 ring-[var(--accent)] border-transparent' : ''
-                        }`}
-                      >
-                        <div>
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center space-x-2.5 overflow-hidden">
-                              <div className="h-7 w-7 rounded-full bg-black text-white dark:bg-white dark:text-black flex items-center justify-center font-bold text-xs shrink-0">
-                                {p.name[0].toUpperCase()}
-                              </div>
-                              <div className="overflow-hidden">
-                                <span className="text-xs font-bold text-[var(--foreground)] hover:underline truncate block">
-                                  {p.name}
-                                </span>
-                                <span className="text-[11px] text-[var(--muted)] truncate block font-mono">
-                                  {p.domain}
-                                </span>
-                              </div>
-                            </div>
+                      setStatusFilter('All');
+                    }
+              }
+            />
+          )}
+        </section>
 
-                            {/* Vercel Status Badge */}
-                            <Badge variant={p.status === 'READY' ? 'success' : 'default'} pulse={p.status === 'READY'}>
-                              {p.status === 'READY' ? 'Ready' : p.status}
-                            </Badge>
-                          </div>
+      </main>
 
-                          {/* Commit message & branch */}
-                          <div className="mt-3 text-[11px] text-[var(--muted)] flex items-center space-x-1.5 truncate">
-                            <GitBranch className="h-3 w-3 shrink-0" />
-                            <span className="truncate">{p.commitMsg}</span>
-                          </div>
-                        </div>
-
-                        {/* Card Footer: Repo and timestamp */}
-                        <div className="pt-2 border-t border-[var(--border)] flex items-center justify-between text-[10px] text-[var(--muted)] font-mono">
-                          <span className="truncate max-w-[140px]">{p.repoOwner}/{p.repo}</span>
-                          <span>{formatTimeAgo(p.updatedAt)}</span>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  /* List View */
-                  <div className="rounded-[8px] border border-[var(--border)] bg-[var(--card)] divide-y divide-[var(--border)]">
-                    {filteredProjects.map((p) => (
-                      <div
-                        key={p.id}
-                        onClick={() => setSelectedProject(p)}
-                        className={`p-3 sm:p-3.5 flex items-center justify-between hover:bg-[var(--background-2)] transition-colors text-xs cursor-pointer ${
-                          selectedProject?.id === p.id ? 'bg-[var(--background-2)] font-semibold' : ''
-                        }`}
-                      >
-                        <div className="flex items-center space-x-3 overflow-hidden">
-                          <div className="h-6 w-6 rounded-full bg-black text-white dark:bg-white dark:text-black flex items-center justify-center font-bold text-[10px] shrink-0">
-                            {p.name[0].toUpperCase()}
-                          </div>
-                          <div>
-                            <span className="font-semibold block">{p.name}</span>
-                            <span className="text-[10px] font-mono text-[var(--muted)]">{p.domain}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                          <span className="hidden sm:inline text-[11px] text-[var(--muted)] max-w-xs truncate">
-                            {p.commitMsg}
-                          </span>
-                          <Badge variant={p.status === 'READY' ? 'success' : 'default'}>
-                            {p.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-              </div>
-
-            </div>
-
-          </PageTransition>
-        </main>
-      </div>
+      {/* Screen B: New Project Dialog */}
+      <NewProjectDialog
+        open={isNewDialogOpen}
+        onOpenChange={setIsNewDialogOpen}
+        onCreated={handleProjectCreated}
+      />
 
       {/* Global Command Palette */}
       <CommandPalette
         isOpen={isCommandPaletteOpen}
         onClose={() => setIsCommandPaletteOpen(false)}
-        onOpenQuickAdd={() => setIsQuickAddOpen(true)}
-        projects={projects}
-      />
-
-      {/* Quick Add Project Modal */}
-      <QuickAddModal
-        isOpen={isQuickAddOpen}
-        onClose={() => setIsQuickAddOpen(false)}
-        onProjectCreated={handleProjectCreated}
-      />
-
-      {/* Mobile Navigation Drawer */}
-      <MobileNav
-        isOpen={isMobileNavOpen}
-        onClose={() => setIsMobileNavOpen(false)}
-        onOpenQuickAdd={() => setIsQuickAddOpen(true)}
-        onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
-      />
-
-      {/* Mobile Tab Bar */}
-      <MobileTabBar
-        onOpenMobileNav={() => setIsMobileNavOpen(true)}
+        onOpenQuickAdd={() => setIsNewDialogOpen(true)}
+        projects={projects.map((p) => ({
+          name: p.name,
+          domain: p.liveUrl?.replace('https://', ''),
+          framework: p.techStack[0]?.name || 'App',
+        }))}
       />
     </div>
   );
