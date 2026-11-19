@@ -41,25 +41,23 @@ export function CommandPalette({
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  // Dynamic project items jumping directly to /project/[slug]
+  // Dynamic project items from real Vercel data
   const projectItems: CommandItem[] = projects.map((p) => ({
     id: `project-${p.name}`,
     title: p.name,
-    subtitle: `${p.framework || 'Project'} · Resume & monitor`,
+    subtitle: `${p.framework || 'project'} · ${p.domain || `${p.name}.vercel.app`}`,
     group: 'Projects',
     icon: Globe,
     onSelect: () => {
-      onClose();
-      const slug = p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-      router.push(`/project/${slug}`);
+      if (p.domain) window.open(`https://${p.domain}`, '_blank');
     }
   }));
 
   const staticItems: CommandItem[] = [
     {
       id: 'action-new',
-      title: 'New Project (N)',
-      subtitle: 'Create a new project space to track re-entry resume',
+      title: 'Import New Project',
+      subtitle: 'Connect a GitHub repository to track on Vercel',
       group: 'Actions',
       icon: Plus,
       onSelect: () => {
@@ -68,15 +66,20 @@ export function CommandPalette({
       }
     },
     {
+      id: 'action-deployments',
+      title: 'View Deployments',
+      subtitle: 'Inspect real-time deployment status across projects',
+      group: 'Actions',
+      icon: Layers,
+      onSelect: () => router.push('/#deployments')
+    },
+    {
       id: 'pref-theme',
       title: 'Toggle Theme (Light / Dark)',
-      subtitle: 'Switch between minimal light default and dark mode',
+      subtitle: 'Switch between light default and dark mode',
       group: 'Preferences',
       icon: Sun,
-      onSelect: () => {
-        toggleTheme();
-        onClose();
-      }
+      onSelect: () => toggleTheme()
     }
   ];
 
