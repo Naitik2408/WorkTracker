@@ -61,7 +61,7 @@ export function PickUpCard({ project }: PickUpCardProps) {
             : 'No deployments set'}
         </div>
         <span className="flex items-center text-[var(--accent)] font-medium text-[11px] group-hover:translate-x-0.5 transition-transform">
-          Resume <ArrowRight className="h-3 w-3 ml-1" />
+          Continue <ArrowRight className="h-3 w-3 ml-1" />
         </span>
       </div>
     </Link>

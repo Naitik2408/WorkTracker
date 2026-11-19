@@ -113,10 +113,10 @@ export function ResumeCard({ project, onUpdate }: ResumeCardProps) {
       <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
         <div>
           <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--accent)] font-mono">
-            6-Month Re-Entry Resume
+            6-Month Re-Entry Brief
           </span>
           <h2 className="text-xs font-semibold text-[var(--foreground)] mt-0.5">
-            Quickly understand state, blockers, and local run command.
+            Quickly understand state, blockers, and how to continue locally.
           </h2>
         </div>
         {saveFlash && (

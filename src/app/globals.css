@@ -17,6 +17,14 @@
   --warning: #f5a623;
   --danger: #e5484d;
 
+  --stage-wishlist: #737373;
+  --stage-reached: #0068d6;
+  --stage-applied: #6366f1;
+  --stage-screening: #f5a623;
+  --stage-interview: #10b981;
+  --stage-offer: #059669;
+  --stage-closed: #737373;
+
   --font-geist-sans: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-geist-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
@@ -37,6 +45,14 @@
   --success: #3ecf6e;
   --warning: #f7b955;
   --danger: #ff6369;
+
+  --stage-wishlist: #737373;
+  --stage-reached: #3291ff;
+  --stage-applied: #818cf8;
+  --stage-screening: #f7b955;
+  --stage-interview: #3ecf6e;
+  --stage-offer: #10b981;
+  --stage-closed: #737373;
 }
 
 * {

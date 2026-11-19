@@ -3,6 +3,7 @@ import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import './globals.css';
 import { ThemeProvider, ThemeScript } from '@/components/ThemeProvider';
+import { PrivacyProvider } from '@/components/PrivacyProvider';
 import { ToastProvider } from '@/components/ui/Toast';
 
 export const metadata: Metadata = {
@@ -22,9 +23,11 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-[var(--background)] text-[var(--foreground)] font-sans antialiased selection:bg-[var(--foreground)] selection:text-[var(--background)]">
         <ThemeProvider>
-          <ToastProvider>
-            {children}
-          </ToastProvider>
+          <PrivacyProvider>
+            <ToastProvider>
+              {children}
+            </ToastProvider>
+          </PrivacyProvider>
         </ThemeProvider>
       </body>
     </html>
